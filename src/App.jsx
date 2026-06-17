@@ -3,6 +3,7 @@ import {
   C, REFS, DOMAINS, DT, CX, ASIL, CYBER, OTA_C, VAR, VEH, ASP_L,
   S_MECHS, IMPLS, GATES, calc, calcQ, INIT_F,
 } from "./engine.js";
+import { FIELDS, ASIL_TABLE, SEC_DEFS, CYBER_TABLE } from "./guideContent.js";
 
 // ═══ SHARED UI ═══
 function Badge({children,color=C.navy}){return <span style={{display:"inline-block",fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,color,background:color+"15",whiteSpace:"nowrap"}}>{children}</span>;}
@@ -27,26 +28,67 @@ function Guide({title,children,step}){
 
 const TABS=[{id:"feat",l:"① Feature"},{id:"arch",l:"② 아키텍처"},{id:"qual",l:"③ 품질"},{id:"gap",l:"④ Gap·계약"},{id:"cr",l:"⑤ CR"},{id:"gate",l:"⑥ 증적Gate"},{id:"act",l:"⑦ 실적보정"},{id:"ref",l:"참조"},{id:"dash",l:"대시보드"}];
 
+// ── ASIL 등급 색상 ──
+const ASIL_C={QM:C.g5,A:C.amber,B:C.navy,C:C.red,D:"#B71C1C"};
+function AsilCell({g}){return <td style={{padding:"3px 4px",textAlign:"center"}}><Badge color={ASIL_C[g]||C.g5}>{g}</Badge></td>;}
+
+// ── ASIL 결정표 (S×E×C → QM~D) ──
+function AsilTable(){return(<div style={{margin:"4px 0"}}>
+  <table style={{borderCollapse:"collapse",fontSize:9,width:"100%"}}>
+    <thead><tr style={{background:C.g05}}>{["S","E","C1","C2","C3"].map(h=><th key={h} style={{padding:"3px 4px",border:`1px solid ${C.g1}`,color:C.g5,fontWeight:600}}>{h}</th>)}</tr></thead>
+    <tbody>{ASIL_TABLE.map((r,i)=>(<tr key={i} style={{background:C.w}}>
+      <td style={{padding:"3px 4px",border:`1px solid ${C.g1}`,textAlign:"center",fontWeight:600,color:C.g7}}>{r.s}</td>
+      <td style={{padding:"3px 4px",border:`1px solid ${C.g1}`,textAlign:"center",fontWeight:600,color:C.g7}}>{r.e}</td>
+      <AsilCell g={r.c1}/><AsilCell g={r.c2}/><AsilCell g={r.c3}/>
+    </tr>))}</tbody>
+  </table>
+  <div style={{fontSize:9,color:C.g5,marginTop:4,lineHeight:1.6}}>
+    <div><strong>S(심각도):</strong> {SEC_DEFS.S.join(" · ")}</div>
+    <div><strong>E(노출):</strong> {SEC_DEFS.E.join(" · ")}</div>
+    <div><strong>C(제어성):</strong> {SEC_DEFS.C.join(" · ")}</div>
+  </div>
+</div>);}
+
+// ── Cyber 등급 매핑표 ──
+function CyberTable(){return(<table style={{borderCollapse:"collapse",fontSize:9,width:"100%",margin:"4px 0"}}>
+  <thead><tr style={{background:C.g05}}>{["등급","판정 기준(노출·영향)","위험값","예시"].map(h=><th key={h} style={{padding:"3px 4px",border:`1px solid ${C.g1}`,color:C.g5,fontWeight:600,textAlign:"left"}}>{h}</th>)}</tr></thead>
+  <tbody>{CYBER_TABLE.map(r=>(<tr key={r.lv}><td style={{padding:"3px 4px",border:`1px solid ${C.g1}`,fontWeight:700,color:C.navy}}>{r.lv}</td><td style={{padding:"3px 4px",border:`1px solid ${C.g1}`,color:C.g7}}>{r.crit}</td><td style={{padding:"3px 4px",border:`1px solid ${C.g1}`,textAlign:"center",fontFamily:"monospace"}}>{r.risk}</td><td style={{padding:"3px 4px",border:`1px solid ${C.g1}`,color:C.g5}}>{r.ex}</td></tr>))}</tbody>
+</table>);}
+
+// ── Feature 11개 항목 필드별 가이드 ──
+function FieldGuide(){
+  return(<div>
+    <div style={{marginBottom:8,padding:8,background:C.navy+"08",borderRadius:6,fontSize:11,color:C.g7}}>
+      <strong style={{color:C.navy}}>Cost Object = Feature ID</strong> — 프로젝트 총액이 아니라 기능 단위로 비용을 산정합니다.
+      아래는 각 열을 <strong>무엇을 / 어떤 근거로 / 어떤 기준으로</strong> 입력하는지 가이드입니다. 표준 ID를 클릭하면 출처가 열립니다.
+    </div>
+    {FIELDS.map(f=>(<div key={f.key} style={{marginBottom:8,border:`1px solid ${C.g1}`,borderRadius:6,overflow:"hidden"}}>
+      <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",background:C.g0,borderBottom:`1px solid ${C.g1}`}}>
+        <Badge color={C.navy}>{f.key}</Badge>
+        <span style={{fontSize:12,fontWeight:700,color:C.navy}}>{f.label}</span>
+        {f.refs?.length>0&&<span style={{marginLeft:"auto"}}><RefTag ids={f.refs}/></span>}
+      </div>
+      <div style={{padding:"8px 10px",fontSize:11,color:C.g7,lineHeight:1.7}}>
+        <div><span style={{color:C.g5,fontWeight:600}}>무엇:</span> {f.what}</div>
+        <div style={{marginTop:3}}><span style={{color:C.g5,fontWeight:600}}>결정 방법:</span> {f.how}</div>
+        <div style={{marginTop:4}}><span style={{color:C.g5,fontWeight:600}}>판정 기준:</span>
+          <ul style={{margin:"2px 0 0",paddingLeft:16}}>{f.criteria.map((ln,i)=><li key={i} style={{whiteSpace:"pre-wrap"}}>{ln}</li>)}</ul>
+        </div>
+        {f.table==="ASIL"&&<AsilTable/>}
+        {f.table==="CYBER"&&<CyberTable/>}
+        <div style={{marginTop:4,padding:"4px 8px",background:C.amber+"10",borderRadius:4,fontSize:10}}><span style={{color:C.amber,fontWeight:600}}>예시:</span> {f.example}</div>
+      </div>
+    </div>))}
+  </div>);
+}
+
 // ═══ T1: Features ═══
 function T1({F,sF}){
   const[ei,sEi]=useState(null);
   const upd=(i,k,v)=>{const n=[...F];n[i]={...n[i],[k]:k==="size"?Number(v):v};sF(n);};
   return(<div>
-    <Guide title="Feature 등록 가이드라인" step="1">
-      <div><strong style={{color:C.navy}}>Cost Object = Feature ID</strong> — 프로젝트 총액이 아닌 기능 단위로 비용을 산정합니다.</div>
-      <div style={{marginTop:6}}><strong>Feature ID 부여 규칙:</strong> FTR-001 형식. 하나의 Feature는 독립적으로 개발·검증·납품 가능한 최소 기능 단위입니다.</div>
-      <div style={{marginTop:6}}><strong>기능규모(FP) 산정:</strong> IFPUG 또는 간이 FP 방법 사용. 입력/출력/조회/내부파일/외부파일 수를 기반으로 산출합니다. 초기에는 유사 기능 대비 상대 규모로 추정해도 됩니다.</div>
-      <div style={{marginTop:6}}><strong>도메인 선택 기준:</strong> 해당 Feature가 속한 차량 도메인. 도메인에 따라 생산성(h/FP), 검증비율, 단가가 자동 적용됩니다.</div>
-      <div style={{marginTop:8,padding:8,background:C.amber+"10",borderRadius:4}}><strong style={{color:C.amber}}>개발유형 판정 로직:</strong>
-        <div>· 코드 변경 없음 + 동일 플랫폼/ECU/IF → <strong>Reuse As-Is</strong></div>
-        <div>· 코드 변경 없음 + 대상 차종 변경 + Cal/Variant 확인 → <strong>CO 재검증</strong></div>
-        <div>· 코드 일부 변경 + IF 또는 Cal 수정 → <strong>CO 수정</strong></div>
-        <div>· 기존 기능 기반 + 요구사항 변경 큼 → <strong>Reuse 수정</strong></div>
-        <div>· 완전 신규 → <strong>신규개발</strong></div>
-      </div>
-      <div style={{marginTop:6}}><strong>ASIL 설정:</strong> HARA 결과에 따라 배정. QM(비안전) ~ D(최고). ASIL이 높을수록 개발·검증 비용 증가.</div>
-      <div style={{marginTop:6}}><strong>Variant:</strong> SINGLE(단일 차종) ~ COMPLEX(9종+). 차종/트림/지역 조합 수에 따라 통합 검증 비용 증가.</div>
-      <div style={{marginTop:6}}><strong>차종적용:</strong> 동일 플랫폼이면 SAME, ECU 변경이 있으면 DIFF_ECU, Safety 증적 재검토가 필요하면 SAFETY_RE.</div>
+    <Guide title="Feature 등록 가이드라인 — 11개 항목 입력 기준" step="1">
+      <FieldGuide/>
     </Guide>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
       <div style={{fontSize:14,fontWeight:700,color:C.navy}}>Feature Register</div>
