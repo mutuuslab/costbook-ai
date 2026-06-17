@@ -1,0 +1,7 @@
+# Netlify 배포 설정 — 정적 SPA (라우터 없음, 리다이렉트 규칙 불필요)
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
