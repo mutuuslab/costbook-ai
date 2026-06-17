@@ -15,6 +15,18 @@ describe("실습 시나리오 — 유효성", () => {
     expect(WORKSHOP.goal).toContain("Explainable");
   });
 
+  it("워크숍은 단계(상세+연계탭)·발표·토론·평가·산출물을 갖춘다", () => {
+    expect(WORKSHOP.steps.length).toBe(5);
+    for (const s of WORKSHOP.steps) {
+      expect(s.name && s.detail && s.tab).toBeTruthy();
+    }
+    expect(WORKSHOP.discuss.length).toBeGreaterThan(0);
+    expect(WORKSHOP.present.length).toBeGreaterThan(0);
+    expect(WORKSHOP.criteria.length).toBe(4);
+    expect(WORKSHOP.outputs.length).toBeGreaterThan(0);
+    expect(WORKSHOP.evalMethod).toBeTruthy();
+  });
+
   it.each(SCENARIOS.map((s) => [s.id, s]))("%s feature 가 모든 enum 유효값을 쓴다", (id, s) => {
     const f = s.feature;
     for (const [k, list] of Object.entries(enums)) {

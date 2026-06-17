@@ -471,16 +471,31 @@ function T_Lab({sF,setTab,sMech}){
       </div>
     </div>))}
     <div style={{border:`1.5px solid ${C.navy}30`,borderRadius:8,padding:12,background:C.navy+"06"}}>
-      <div style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:6}}>④ {WORKSHOP.title}</div>
-      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:6}}>
-        <ScenarioList title="진행 단계" color={C.navy} items={WORKSHOP.steps}/>
+      <div style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:4}}>④ {WORKSHOP.title}</div>
+      <div style={{fontSize:11,color:C.g7,lineHeight:1.7,marginBottom:8}}>{WORKSHOP.intro}</div>
+      {/* 진행 5단계 — 상세 + 연계 탭 */}
+      <div style={{fontSize:11,fontWeight:700,color:C.navy,marginBottom:4}}>진행 단계</div>
+      <div style={{marginBottom:8}}>{WORKSHOP.steps.map((s,i)=>(<div key={i} style={{display:"flex",gap:8,padding:"5px 0",borderBottom:`1px solid ${C.g1}`,alignItems:"baseline"}}>
+        <span style={{width:20,height:20,borderRadius:"50%",background:C.navy,color:C.w,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>{s.n}</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.g7}}>{s.name}</div>
+          <div style={{fontSize:10,color:C.g5,lineHeight:1.6}}>{s.detail}</div>
+        </div>
+        <span style={{fontSize:9,color:C.blue,border:`1px solid ${C.blue}30`,borderRadius:4,padding:"2px 6px",flexShrink:0,whiteSpace:"nowrap"}}>{s.tab}</span>
+      </div>))}</div>
+      {/* 발표 항목 / 토론 체크 포인트 */}
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:8}}>
         <ScenarioList title="그룹 발표 항목" color={C.blue} items={WORKSHOP.present}/>
+        <ScenarioList title="토론 체크 포인트" color={C.red} items={WORKSHOP.discuss}/>
       </div>
-      <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
-        <ScenarioList title="공통 평가 기준" color={C.amber} items={WORKSHOP.criteria}/>
-        <ScenarioList title="산출물" color={C.teal} items={WORKSHOP.outputs}/>
+      {/* 평가 기준 / 산출물 */}
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:6}}>
+        <ScenarioList title="공통 평가 기준 (각 1~5점)" color={C.amber} items={WORKSHOP.criteria}/>
+        <ScenarioList title="워크숍 산출물" color={C.teal} items={WORKSHOP.outputs}/>
       </div>
-      <div style={{marginTop:8,padding:"6px 10px",background:C.green+"12",borderRadius:4,fontSize:11,color:C.green,fontWeight:700}}>🎯 최종 목표: {WORKSHOP.goal}</div>
+      <div style={{fontSize:10,color:C.g5,marginBottom:3}}><strong style={{color:C.g7}}>평가 방식:</strong> {WORKSHOP.evalMethod}</div>
+      <div style={{fontSize:10,color:C.g5,marginBottom:8}}><strong style={{color:C.g7}}>{WORKSHOP.facilitation}</strong></div>
+      <div style={{padding:"6px 10px",background:C.green+"12",borderRadius:4,fontSize:11,color:C.green,fontWeight:700}}>🎯 최종 목표: {WORKSHOP.goal}</div>
     </div>
   </div>);
 }
