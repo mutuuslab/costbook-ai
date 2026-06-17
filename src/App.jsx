@@ -4,6 +4,8 @@ import {
   S_MECHS, IMPLS, GATES, calc, calcQ, INIT_F,
 } from "./engine.js";
 import { FIELDS, ASIL_TABLE, SEC_DEFS, CYBER_TABLE } from "./guideContent.js";
+import { buildCostRationale, won } from "./costRationale.js";
+import { SCENARIOS, WORKSHOP } from "./scenarios.js";
 
 // ═══ SHARED UI ═══
 function Badge({children,color=C.navy}){return <span style={{display:"inline-block",fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,color,background:color+"15",whiteSpace:"nowrap"}}>{children}</span>;}
@@ -26,7 +28,7 @@ function Guide({title,children,step}){
   </div>);
 }
 
-const TABS=[{id:"feat",l:"① Feature"},{id:"arch",l:"② 아키텍처"},{id:"qual",l:"③ 품질"},{id:"gap",l:"④ Gap·계약"},{id:"cr",l:"⑤ CR"},{id:"gate",l:"⑥ 증적Gate"},{id:"act",l:"⑦ 실적보정"},{id:"ref",l:"참조"},{id:"dash",l:"대시보드"}];
+const TABS=[{id:"lab",l:"🎓 실습"},{id:"feat",l:"① Feature"},{id:"arch",l:"② 아키텍처"},{id:"qual",l:"③ 품질"},{id:"gap",l:"④ Gap·계약"},{id:"cr",l:"⑤ CR"},{id:"gate",l:"⑥ 증적Gate"},{id:"act",l:"⑦ 실적보정"},{id:"ref",l:"참조"},{id:"dash",l:"대시보드"}];
 
 // ── ASIL 등급 색상 ──
 const ASIL_C={QM:C.g5,A:C.amber,B:C.navy,C:C.red,D:"#B71C1C"};
@@ -79,6 +81,40 @@ function FieldGuide(){
         <div style={{marginTop:4,padding:"4px 8px",background:C.amber+"10",borderRadius:4,fontSize:10}}><span style={{color:C.amber,fontWeight:600}}>예시:</span> {f.example}</div>
       </div>
     </div>))}
+  </div>);
+}
+
+// ── 비용 산정근거 (왜 이 금액인가) ──
+function CostRationale({f,cc}){
+  const r=buildCostRationale(f,cc);
+  const cClr={dev:C.blue,dir:"#795548",ver:C.amber,int:C.teal,tool:C.g5,risk:C.red};
+  return(<div style={{background:C.g0,borderRadius:6,padding:10,fontSize:10}}>
+    <div style={{fontSize:11,fontWeight:700,color:C.navy,marginBottom:6}}>💡 산정근거 — 왜 이 금액이 나오는가</div>
+    <div style={{marginBottom:8}}>
+      {r.work.map((w,i)=>(<div key={i} style={{display:"flex",gap:6,padding:"3px 0",borderBottom:`1px solid ${C.g1}`,alignItems:"baseline"}}>
+        <span style={{minWidth:80,color:C.g5,fontWeight:600,flexShrink:0}}>{w.label}</span>
+        <span style={{flex:1,fontFamily:"monospace",color:C.g7,fontSize:9}}>{w.expr}</span>
+        <span style={{fontWeight:700,color:C.navy,fontFamily:"monospace",flexShrink:0}}>{w.result}</span>
+        <RefTag ids={w.refs}/>
+      </div>))}
+    </div>
+    {r.items.map(it=>(<div key={it.key} style={{padding:"4px 0",borderBottom:`1px solid ${C.g1}`}}>
+      <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+        <span style={{minWidth:80,flexShrink:0}}><Badge color={cClr[it.key]||C.navy}>{it.label}</Badge></span>
+        <span style={{flex:1,fontFamily:"monospace",color:C.g7,fontSize:9}}>{it.formula}</span>
+        <span style={{fontWeight:700,color:cClr[it.key]||C.navy,fontFamily:"monospace",flexShrink:0}}>{won(it.value)}</span>
+        <RefTag ids={it.refs}/>
+      </div>
+      <div style={{fontSize:9,color:C.g5,paddingLeft:86}}>{it.note}</div>
+    </div>))}
+    <div style={{marginTop:6,padding:"6px 8px",background:C.navy+"0c",borderRadius:4}}>
+      <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+        <span style={{flex:1,fontFamily:"monospace",color:C.g7,fontSize:9}}>{r.total.formula}</span>
+        <span style={{fontWeight:700,color:C.navy,fontSize:13,fontFamily:"monospace",flexShrink:0}}>Should-Cost {won(r.total.value)}</span>
+        <RefTag ids={r.total.refs}/>
+      </div>
+      <div style={{fontSize:9,color:C.g5}}>{r.total.note}</div>
+    </div>
   </div>);
 }
 
@@ -154,13 +190,7 @@ function T2({F,ac,sAc,mech,sMech,asp}){
         {[{l:"코드",h:cc.coB.coding},{l:"적용성",h:cc.coB.analysis},{l:"통합",h:cc.coB.integ},{l:"Cal",h:cc.coB.cal},{l:"문서",h:cc.coB.doc},{l:"릴리스",h:cc.coB.rel}].map(a=>(<div key={a.l} style={{background:C.w,borderRadius:3,padding:3,textAlign:"center"}}><div style={{color:C.g5}}>{a.l}</div><div style={{fontWeight:700,fontFamily:"monospace"}}>{a.h}h</div></div>))}
       </div>
     </div>)}
-    <div style={{background:C.g0,borderRadius:6,padding:8,fontSize:10}}>
-      <div style={{fontFamily:"monospace",color:C.g7,lineHeight:1.7}}>
-        보정공수 = {f.size}×{DOMAINS[f.domain].prod}×SF{cc.sf}×유형{cc.co.dc}×복잡도{cc.co.cc}×Var{cc.co.vc}×차종{cc.co.ve} = <strong>{cc.adjH}h</strong><br/>
-        개발비={fmt(cc.devCost)} + 직접비={fmt(cc.dirCost)} + 검증비={fmt(cc.vCost)} + 통합={fmt(cc.iCost)} + 도구={fmt(cc.tCost)} + 리스크={fmt(cc.rCost)}<br/>
-        × 구현배분{cc.co.im} = <strong style={{color:C.navy,fontSize:12}}>Should-Cost {fmt(cc.should)}</strong>
-      </div>
-    </div>
+    <CostRationale f={f} cc={cc}/>
   </div>);
 }
 
@@ -400,9 +430,64 @@ function T9({F,ac,mech,asp}){
   </div>);
 }
 
+// ═══ T_Lab: 실습 시나리오 ═══
+function ScenarioAttrs({f}){
+  const items=[["도메인",DOMAINS[f.domain]?.n,DOMAINS[f.domain]?.color],["유형",DT[f.devType]?.l,C.navy],["복잡도",CX[f.complexity]?.l,CX[f.complexity]?.color],["규모",`${f.size}FP`,C.g7],["ASIL",f.asil,f.asil>="C"?C.red:f.asil==="QM"?C.g5:C.amber],["Cyber",f.cyber,C.teal],["OTA",f.ota,C.purple],["Var",f.variant,C.g5],["차종",f.vehicleApp,C.g5]];
+  return(<div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>{items.map(([k,v,c])=>(<span key={k} style={{fontSize:9,border:`1px solid ${C.g1}`,borderRadius:4,padding:"2px 6px",background:C.w}}><span style={{color:C.g5}}>{k} </span><span style={{fontWeight:700,color:c||C.g7}}>{v}</span></span>))}</div>);
+}
+function ScenarioList({title,color,items}){return(<div style={{flex:1,minWidth:0}}>
+  <div style={{fontSize:11,fontWeight:700,color,marginBottom:3}}>{title}</div>
+  <ul style={{margin:0,paddingLeft:16,fontSize:10,color:C.g7,lineHeight:1.7}}>{items.map((t,i)=><li key={i}>{t}</li>)}</ul>
+</div>);}
+function T_Lab({sF,setTab,sMech}){
+  const start=(sc)=>{sF([{...sc.feature}]);sMech(sc.mech);setTab("arch");};
+  return(<div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+      <div style={{fontSize:14,fontWeight:700,color:C.navy}}>🎓 개발비 산정 실습 시나리오</div>
+      <button onClick={()=>sF(INIT_F)} style={{padding:"6px 12px",border:`1px solid ${C.g1}`,borderRadius:5,background:C.w,fontSize:11,cursor:"pointer",color:C.g5}}>기본 예제(5건) 복원</button>
+    </div>
+    <div style={{fontSize:11,color:C.g5,marginBottom:12}}>시나리오를 고르면 해당 Feature가 <strong>② 아키텍처</strong> 탭에 자동 로드됩니다. 비용을 산정한 뒤 각 시나리오의 <strong>실습 질문</strong>에 답해 보세요.</div>
+    {SCENARIOS.map(sc=>(<div key={sc.id} style={{border:`1px solid ${C.g1}`,borderRadius:8,marginBottom:14,overflow:"hidden"}}>
+      <div style={{background:C.navy,padding:"9px 12px",display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontSize:17,fontWeight:700,color:C.w}}>{sc.no}</span>
+        <span style={{fontSize:13,fontWeight:700,color:C.w,flex:1}}>{sc.title}</span>
+        <span style={{fontSize:10,fontWeight:700,color:C.w,border:"1px solid #ffffff55",borderRadius:4,padding:"2px 8px"}}>{sc.badge}</span>
+      </div>
+      <div style={{padding:12}}>
+        <div style={{fontSize:11,color:C.g7,lineHeight:1.7,marginBottom:8}}>{sc.overview}</div>
+        <ScenarioAttrs f={sc.feature}/>
+        <div style={{display:"flex",gap:14,marginBottom:8,flexWrap:"wrap"}}>
+          <ScenarioList title="핵심 검토 포인트" color={C.navy} items={sc.checkPoints}/>
+          <ScenarioList title="실습 질문" color={C.amber} items={sc.questions}/>
+        </div>
+        <div style={{marginBottom:8}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.teal,marginBottom:3}}>비용 항목 매핑 (슬라이드 ↔ 플랫폼)</div>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:9}}>
+            <tbody>{sc.costMap.map((m,i)=>(<tr key={i}><td style={{padding:"3px 6px",border:`1px solid ${C.g1}`,fontWeight:600,color:C.g7,width:"38%"}}>{m.slide}</td><td style={{padding:"3px 6px",border:`1px solid ${C.g1}`,color:C.g5}}>{m.platform}</td></tr>))}</tbody>
+          </table>
+        </div>
+        <div style={{marginBottom:10}}><ScenarioList title="협상 방향" color={C.green} items={sc.negotiation}/></div>
+        <button onClick={()=>start(sc)} style={{width:"100%",padding:"9px",background:C.navy,color:C.w,border:"none",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer"}}>▶ 이 시나리오로 실습 시작 (② 아키텍처로 이동)</button>
+      </div>
+    </div>))}
+    <div style={{border:`1.5px solid ${C.navy}30`,borderRadius:8,padding:12,background:C.navy+"06"}}>
+      <div style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:6}}>④ {WORKSHOP.title}</div>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:6}}>
+        <ScenarioList title="진행 단계" color={C.navy} items={WORKSHOP.steps}/>
+        <ScenarioList title="그룹 발표 항목" color={C.blue} items={WORKSHOP.present}/>
+      </div>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+        <ScenarioList title="공통 평가 기준" color={C.amber} items={WORKSHOP.criteria}/>
+        <ScenarioList title="산출물" color={C.teal} items={WORKSHOP.outputs}/>
+      </div>
+      <div style={{marginTop:8,padding:"6px 10px",background:C.green+"12",borderRadius:4,fontSize:11,color:C.green,fontWeight:700}}>🎯 최종 목표: {WORKSHOP.goal}</div>
+    </div>
+  </div>);
+}
+
 // ═══ MAIN ═══
 export default function App(){
-  const[tab,sTab]=useState("feat");const[F,sF]=useState(INIT_F);
+  const[tab,sTab]=useState("lab");const[F,sF]=useState(INIT_F);
   const[ac,sAc]=useState(()=>{const m={};INIT_F.forEach(f=>m[f.id]="sw");return m;});
   const[mech,sMech]=useState("redundancy");const[asp,sAsp]=useState("L2");
   return(<div style={{fontFamily:"'Pretendard',-apple-system,sans-serif",background:C.w,minHeight:"100vh"}}>
@@ -419,6 +504,7 @@ export default function App(){
       {TABS.map(t=>(<button key={t.id} onClick={()=>sTab(t.id)} style={{padding:"7px 9px",border:"none",borderBottom:tab===t.id?`2px solid ${C.navy}`:"2px solid transparent",background:"transparent",color:tab===t.id?C.navy:C.g5,fontSize:11,fontWeight:tab===t.id?700:400,cursor:"pointer",marginBottom:-2,whiteSpace:"nowrap"}}>{t.l}</button>))}
     </div>
     <div style={{padding:14,maxWidth:1100,margin:"0 auto"}}>
+      {tab==="lab"&&<T_Lab sF={sF} setTab={sTab} sMech={sMech}/>}
       {tab==="feat"&&<T1 F={F} sF={sF}/>}
       {tab==="arch"&&<T2 F={F} ac={ac} sAc={sAc} mech={mech} sMech={sMech} asp={asp}/>}
       {tab==="qual"&&<T3 F={F} ac={ac} mech={mech} asp={asp}/>}
