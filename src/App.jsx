@@ -4,8 +4,9 @@ import {
   S_MECHS, IMPLS, GATES, calc, calcQ, INIT_F,
 } from "./engine.js";
 import { FIELDS, ASIL_TABLE, SEC_DEFS, CYBER_TABLE, PLAIN } from "./guideContent.js";
-import { buildCostRationale, won } from "./costRationale.js";
+import { buildCostRationale, won, wonKRW } from "./costRationale.js";
 import { SCENARIOS, WORKSHOP } from "./scenarios.js";
+import { GLOSSARY, GTERM, GLOSSARY_CATS } from "./glossary.js";
 
 // ═══ SHARED UI ═══
 function Badge({children,color=C.navy}){return <span style={{display:"inline-block",fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,color,background:color+"15",whiteSpace:"nowrap"}}>{children}</span>;}
@@ -40,7 +41,22 @@ function Plain({p}){
   </div>);
 }
 
-const TABS=[{id:"lab",l:"🎓 실습"},{id:"feat",l:"① Feature"},{id:"arch",l:"② 아키텍처"},{id:"qual",l:"③ 품질"},{id:"gap",l:"④ Gap·계약"},{id:"cr",l:"⑤ CR"},{id:"gate",l:"⑥ 증적Gate"},{id:"act",l:"⑦ 실적보정"},{id:"ref",l:"참조"},{id:"dash",l:"대시보드"}];
+// 용어 클릭 풀이(툴팁) — children 을 점선 밑줄로 표시, 클릭 시 정의 팝업
+function Term({id,children}){
+  const g=GTERM[id];const[o,sO]=useState(false);
+  if(!g) return <>{children}</>;
+  return(<span style={{position:"relative",display:"inline-block"}}>
+    <span onClick={e=>{e.stopPropagation();sO(!o);}} style={{borderBottom:`1px dotted ${C.blue}`,cursor:"help"}} title="용어 설명">{children}</span>
+    {o&&<div onClick={e=>e.stopPropagation()} style={{position:"absolute",top:"100%",left:0,zIndex:99,background:C.w,border:`1px solid ${C.g1}`,borderRadius:6,padding:10,width:250,boxShadow:"0 4px 16px #0002",fontSize:10,lineHeight:1.6,textAlign:"left",fontWeight:400,whiteSpace:"normal",color:C.g7}}>
+      <strong style={{color:C.navy}}>{g.term}</strong>{g.aka&&<span style={{color:C.g5}}> ({g.aka})</span>}
+      <div style={{marginTop:3}}>{g.def}</div>
+      {g.refs?.length>0&&<div style={{marginTop:4}}><RefTag ids={g.refs}/></div>}
+      <button onClick={()=>sO(false)} style={{marginTop:4,fontSize:9,color:C.g3,background:"none",border:"none",cursor:"pointer"}}>닫기</button>
+    </div>}
+  </span>);
+}
+
+const TABS=[{id:"lab",l:"🎓 실습"},{id:"feat",l:"① Feature"},{id:"arch",l:"② 아키텍처"},{id:"qual",l:"③ 품질"},{id:"gap",l:"④ Gap·계약"},{id:"cr",l:"⑤ CR"},{id:"gate",l:"⑥ 증적Gate"},{id:"act",l:"⑦ 실적보정"},{id:"ref",l:"참조"},{id:"glossary",l:"📖 용어집"},{id:"dash",l:"대시보드"}];
 
 // ── ASIL 등급 색상 ──
 const ASIL_C={QM:C.g5,A:C.amber,B:C.navy,C:C.red,D:"#B71C1C"};
@@ -104,7 +120,7 @@ function CostRationale({f,cc}){
     <div style={{fontSize:11,fontWeight:700,color:C.navy,marginBottom:6}}>💡 산정근거 — 왜 이 금액이 나오는가</div>
     <div style={{marginBottom:8}}>
       {r.work.map((w,i)=>(<div key={i} style={{display:"flex",gap:6,padding:"3px 0",borderBottom:`1px solid ${C.g1}`,alignItems:"baseline"}}>
-        <span style={{minWidth:80,color:C.g5,fontWeight:600,flexShrink:0}}>{w.label}</span>
+        <span style={{minWidth:80,color:C.g5,fontWeight:600,flexShrink:0}}><Term id={w.tip}>{w.label}</Term></span>
         <span style={{flex:1,fontFamily:"monospace",color:C.g7,fontSize:9}}>{w.expr}</span>
         <span style={{fontWeight:700,color:C.navy,fontFamily:"monospace",flexShrink:0}}>{w.result}</span>
         <RefTag ids={w.refs}/>
@@ -112,9 +128,9 @@ function CostRationale({f,cc}){
     </div>
     {r.items.map(it=>(<div key={it.key} style={{padding:"4px 0",borderBottom:`1px solid ${C.g1}`}}>
       <div style={{display:"flex",alignItems:"baseline",gap:6}}>
-        <span style={{minWidth:80,flexShrink:0}}><Badge color={cClr[it.key]||C.navy}>{it.label}</Badge></span>
+        <span style={{minWidth:80,flexShrink:0}}><Term id={it.tip}><Badge color={cClr[it.key]||C.navy}>{it.label}</Badge></Term></span>
         <span style={{flex:1,fontFamily:"monospace",color:C.g7,fontSize:9}}>{it.formula}</span>
-        <span style={{fontWeight:700,color:cClr[it.key]||C.navy,fontFamily:"monospace",flexShrink:0}}>{won(it.value)}</span>
+        <span style={{flexShrink:0,textAlign:"right"}}><span style={{fontWeight:700,color:cClr[it.key]||C.navy,fontFamily:"monospace"}}>{won(it.value)}</span><div style={{fontSize:8,color:C.g5,fontFamily:"monospace"}}>{wonKRW(it.value)}</div></span>
         <RefTag ids={it.refs}/>
       </div>
       <div style={{fontSize:9,color:C.g5,paddingLeft:86}}>{it.note}</div>
@@ -122,7 +138,7 @@ function CostRationale({f,cc}){
     <div style={{marginTop:6,padding:"6px 8px",background:C.navy+"0c",borderRadius:4}}>
       <div style={{display:"flex",alignItems:"baseline",gap:6}}>
         <span style={{flex:1,fontFamily:"monospace",color:C.g7,fontSize:9}}>{r.total.formula}</span>
-        <span style={{fontWeight:700,color:C.navy,fontSize:13,fontFamily:"monospace",flexShrink:0}}>Should-Cost {won(r.total.value)}</span>
+        <span style={{flexShrink:0,textAlign:"right"}}><span style={{fontWeight:700,color:C.navy,fontSize:13,fontFamily:"monospace"}}><Term id="should">Should-Cost</Term> {won(r.total.value)}</span><div style={{fontSize:9,color:C.g5,fontFamily:"monospace"}}>{wonKRW(r.total.value)}</div></span>
         <RefTag ids={r.total.refs}/>
       </div>
       <div style={{fontSize:9,color:C.g5}}>{r.total.note}</div>
@@ -431,7 +447,7 @@ function T9({F,ac,mech,asp}){
   return(<div>
     <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:8}}>대시보드</div>
     <div style={{background:`linear-gradient(135deg,${C.navy},#003399)`,borderRadius:10,padding:14,marginBottom:10,display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6}}>
-      {[{l:"Should-Cost",v:fmt(tSC)},{l:"개발비",v:`${Math.round(tDev/tSC*100)}%`},{l:"검증비",v:`${Math.round(tVer/tSC*100)}%`},{l:"Feature",v:`${F.length}건`},{l:"ASPICE",v:ASP_L[asp].l}].map(it=>(<div key={it.l} style={{textAlign:"center",color:C.w}}><div style={{fontSize:9,opacity:0.6}}>{it.l}</div><div style={{fontSize:18,fontWeight:700,marginTop:2}}>{it.v}</div></div>))}
+      {[{l:"Should-Cost",v:fmt(tSC),sub:wonKRW(tSC)},{l:"개발비",v:`${Math.round(tDev/tSC*100)}%`},{l:"검증비",v:`${Math.round(tVer/tSC*100)}%`},{l:"Feature",v:`${F.length}건`},{l:"ASPICE",v:ASP_L[asp].l}].map(it=>(<div key={it.l} style={{textAlign:"center",color:C.w}}><div style={{fontSize:9,opacity:0.6}}>{it.l}</div><div style={{fontSize:18,fontWeight:700,marginTop:2}}>{it.v}</div>{it.sub&&<div style={{fontSize:8,opacity:0.55,fontFamily:"monospace"}}>{it.sub}</div>}</div>))}
     </div>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
       <div style={{background:C.g0,borderRadius:8,padding:10}}><div style={{fontSize:11,fontWeight:600,color:C.g7,marginBottom:6}}>도메인별</div>
@@ -439,6 +455,29 @@ function T9({F,ac,mech,asp}){
       <div style={{background:C.g0,borderRadius:8,padding:10}}><div style={{fontSize:11,fontWeight:600,color:C.g7,marginBottom:6}}>비용 구조</div>
         {[{l:"개발비",v:tDev,c:C.blue},{l:"직접비",v:all.reduce((s,c)=>s+c.dirCost,0),c:"#795548"},{l:"검증비",v:tVer,c:C.amber},{l:"통합",v:all.reduce((s,c)=>s+c.iCost,0),c:C.purple},{l:"도구",v:all.reduce((s,c)=>s+c.tCost,0),c:C.g5},{l:"리스크",v:all.reduce((s,c)=>s+c.rCost,0),c:C.red}].map(it=>(<div key={it.l} style={{marginBottom:4}}><div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:1}}><span>{it.l}</span><span style={{fontFamily:"monospace",fontWeight:600}}>{fmt(it.v)} ({Math.round(it.v/tSC*100)}%)</span></div><Bar value={it.v} max={tSC} color={it.c} h={5}/></div>))}</div>
     </div>
+  </div>);
+}
+
+// ═══ T_Glossary: 용어집 ═══
+function T_Glossary(){
+  const[q,sQ]=useState("");
+  const f=q.trim().toLowerCase();
+  const match=(g)=>!f||g.term.toLowerCase().includes(f)||(g.aka||"").toLowerCase().includes(f)||g.def.toLowerCase().includes(f);
+  return(<div>
+    <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:4}}>📖 용어집</div>
+    <div style={{fontSize:11,color:C.g5,marginBottom:8}}>이 도구에서 쓰는 용어를 쉬운 말로 풀었습니다. 표·산정근거의 <span style={{borderBottom:`1px dotted ${C.blue}`}}>점선 용어</span>를 클릭해도 같은 설명이 뜹니다.</div>
+    <input value={q} onChange={e=>sQ(e.target.value)} placeholder="용어 검색 (예: 검증비율, ASIL, NRE)" style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",border:`1px solid ${C.g1}`,borderRadius:6,fontSize:12,marginBottom:12}}/>
+    {GLOSSARY_CATS.map(cat=>{const list=GLOSSARY.filter(g=>g.cat===cat&&match(g));if(!list.length)return null;return(<div key={cat} style={{marginBottom:14}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.navy,borderBottom:`2px solid ${C.g1}`,paddingBottom:4,marginBottom:6}}>{cat}</div>
+      {list.map(g=>(<div key={g.id} style={{padding:"7px 0",borderBottom:`1px solid ${C.g05}`}}>
+        <div style={{display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap"}}>
+          <span style={{fontSize:12,fontWeight:700,color:C.g7}}>{g.term}</span>
+          {g.aka&&<span style={{fontSize:10,color:C.g5,fontFamily:"monospace"}}>{g.aka}</span>}
+          {g.refs?.length>0&&<RefTag ids={g.refs}/>}
+        </div>
+        <div style={{fontSize:11,color:C.g7,lineHeight:1.7,marginTop:2}}>{g.def}</div>
+      </div>))}
+    </div>);})}
   </div>);
 }
 
@@ -541,6 +580,7 @@ export default function App(){
       {tab==="gate"&&<T6 F={F}/>}
       {tab==="act"&&<T7 F={F} ac={ac} mech={mech} asp={asp}/>}
       {tab==="ref"&&<T8/>}
+      {tab==="glossary"&&<T_Glossary/>}
       {tab==="dash"&&<T9 F={F} ac={ac} mech={mech} asp={asp}/>}
     </div>
   </div>);
