@@ -3,7 +3,7 @@ import {
   C, REFS, DOMAINS, DT, CX, ASIL, CYBER, OTA_C, VAR, VEH, ASP_L,
   S_MECHS, IMPLS, GATES, calc, calcQ, INIT_F,
 } from "./engine.js";
-import { FIELDS, ASIL_TABLE, SEC_DEFS, CYBER_TABLE } from "./guideContent.js";
+import { FIELDS, ASIL_TABLE, SEC_DEFS, CYBER_TABLE, PLAIN } from "./guideContent.js";
 import { buildCostRationale, won } from "./costRationale.js";
 import { SCENARIOS, WORKSHOP } from "./scenarios.js";
 
@@ -25,6 +25,18 @@ function Guide({title,children,step}){
       <span style={{fontSize:11,color:C.g3}}>{open?"▲ 접기":"▼ 가이드라인 보기"}</span>
     </button>
     {open&&<div style={{padding:"10px 14px",fontSize:11,color:C.g7,lineHeight:1.8,background:C.w}}>{children}</div>}
+  </div>);
+}
+
+// 쉬운 설명(무엇/왜/언제) — 비전문가용, 항상 노출
+function Plain({p}){
+  if(!p) return null;
+  return(<div style={{border:`1px solid ${C.green}35`,background:C.green+"08",borderRadius:8,padding:"10px 12px",marginBottom:12,fontSize:11.5,lineHeight:1.75,color:C.g7}}>
+    <div style={{fontWeight:700,color:C.green,marginBottom:3}}>🟢 쉬운 설명</div>
+    <div><strong style={{color:C.navy}}>무엇인가요?</strong> {p.what}</div>
+    <div><strong style={{color:C.navy}}>왜 하나요?</strong> {p.why}</div>
+    <div><strong style={{color:C.navy}}>언제 하나요?</strong> {p.when}</div>
+    {p.extra&&<div style={{marginTop:6,padding:"7px 9px",background:C.amber+"12",borderRadius:5}}><strong style={{color:C.amber}}>❗ {p.extraLabel}</strong><div style={{marginTop:2}}>{p.extra}</div></div>}
   </div>);
 }
 
@@ -508,7 +520,7 @@ export default function App(){
   return(<div style={{fontFamily:"'Pretendard',-apple-system,sans-serif",background:C.w,minHeight:"100vh"}}>
     <div style={{background:C.navy,padding:"10px 14px 6px"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,color:C.w}}>◆</span><span style={{fontSize:13,fontWeight:700,color:C.w}}>SW Cost Book AI</span><span style={{fontSize:8,color:"#ffffff40",letterSpacing:1}}>v6.1 GUIDED PIPELINE</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,color:C.w}}>◆</span><span style={{fontSize:13,fontWeight:700,color:C.w}}>SW Cost Book</span><span style={{fontSize:8,color:"#ffffff40",letterSpacing:1}}>v6.1 GUIDED PIPELINE</span></div>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
           <span style={{fontSize:10,color:"#ffffffaa"}}>프로젝트 ASPICE:</span>
           {Object.entries(ASP_L).map(([k,v])=>(<button key={k} onClick={()=>sAsp(k)} style={{padding:"3px 10px",borderRadius:12,border:`1px solid ${asp===k?"#ffffff60":"#ffffff20"}`,background:asp===k?"#ffffff20":"transparent",color:C.w,fontSize:10,cursor:"pointer",fontWeight:asp===k?700:400}}>{v.l} ×{v.oh}</button>))}
@@ -519,6 +531,7 @@ export default function App(){
       {TABS.map(t=>(<button key={t.id} onClick={()=>sTab(t.id)} style={{padding:"7px 9px",border:"none",borderBottom:tab===t.id?`2px solid ${C.navy}`:"2px solid transparent",background:"transparent",color:tab===t.id?C.navy:C.g5,fontSize:11,fontWeight:tab===t.id?700:400,cursor:"pointer",marginBottom:-2,whiteSpace:"nowrap"}}>{t.l}</button>))}
     </div>
     <div style={{padding:14,maxWidth:1100,margin:"0 auto"}}>
+      <Plain p={PLAIN[tab]}/>
       {tab==="lab"&&<T_Lab sF={sF} setTab={sTab} sMech={sMech}/>}
       {tab==="feat"&&<T1 F={F} sF={sF}/>}
       {tab==="arch"&&<T2 F={F} ac={ac} sAc={sAc} mech={mech} sMech={sMech} asp={asp}/>}
